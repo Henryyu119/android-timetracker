@@ -71,6 +71,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.1")
 
     // Compose UI
     implementation("androidx.compose.ui:ui:1.4.3")
