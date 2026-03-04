@@ -39,13 +39,21 @@ object PermissionHelper {
         val enabledServicesSetting = Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        ) ?: return false
+        )
+        
+        android.util.Log.d("PermissionHelper", "Expected: $expectedComponentName")
+        android.util.Log.d("PermissionHelper", "Enabled services: $enabledServicesSetting")
+        
+        if (enabledServicesSetting.isNullOrEmpty()) {
+            return false
+        }
         
         val colonSplitter = TextUtils.SimpleStringSplitter(':')
         colonSplitter.setString(enabledServicesSetting)
         
         while (colonSplitter.hasNext()) {
             val componentName = colonSplitter.next()
+            android.util.Log.d("PermissionHelper", "Checking: $componentName")
             if (componentName.equals(expectedComponentName, ignoreCase = true)) {
                 return true
             }
