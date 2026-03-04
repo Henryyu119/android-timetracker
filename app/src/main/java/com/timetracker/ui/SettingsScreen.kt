@@ -43,6 +43,14 @@ fun SettingsScreen() {
     }
     
     LaunchedEffect(Unit) {
+        // 定时检查权限状态
+        while (true) {
+            hasPermission = PermissionHelper.isAccessibilityServiceEnabled(context)
+            kotlinx.coroutines.delay(1000) // 每秒检查一次
+        }
+    }
+    
+    LaunchedEffect(Unit) {
         val database = AppUsageDatabase.getDatabase(context)
         val apiService = ApiService.create(serverUrl)
         val repository = UsageRepository(context, database.appUsageDao(), apiService, preferenceManager)
