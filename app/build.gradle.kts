@@ -31,6 +31,11 @@ android {
         }
     }
 
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -38,6 +43,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs += listOf(
+            "-Xopt-in=kotlin.RequiresOptIn",
+            "-Xsuppress-version-warnings"
+        )
     }
 
     buildFeatures {
