@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TimeTracker</string>
+    <string name="accessibility_service_description">TimeTracker 需要此权限来监控应用使用情况，以便自动记录您的时间使用数据。不会读取或记录任何敏感信息。</string>
 </resources>

@@ -27,7 +27,7 @@ fun SettingsScreen() {
     val scope = rememberCoroutineScope()
     val preferenceManager = remember { PreferenceManager(context) }
     
-    var hasPermission by remember { mutableStateOf(PermissionHelper.hasUsageStatsPermission(context)) }
+    var hasPermission by remember { mutableStateOf(PermissionHelper.isAccessibilityServiceEnabled(context)) }
     var isEnabled by remember { mutableStateOf(preferenceManager.isCollectorEnabled()) }
     var serverUrl by remember { mutableStateOf(preferenceManager.getServerUrl()) }
     var syncInterval by remember { mutableStateOf(preferenceManager.getSyncInterval().toString()) }
@@ -87,17 +87,17 @@ fun SettingsScreen() {
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = if (hasPermission) "✓ 已授予使用统计权限" else "✗ 需要使用统计权限",
+                        text = if (hasPermission) "✓ 已启用无障碍服务" else "✗ 需要启用无障碍服务",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     if (!hasPermission) {
                         Button(
                             onClick = {
-                                PermissionHelper.openUsageStatsSettings(context)
+                                PermissionHelper.openAccessibilitySettings(context)
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("授予权限")
+                            Text("启用无障碍服务")
                         }
                     } else {
                         Button(
@@ -286,11 +286,12 @@ fun SettingsScreen() {
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = "1. 授予「使用统计」权限\n" +
-                                "2. 启用追踪开关\n" +
-                                "3. 应用将自动收集前台应用使用数据\n" +
-                                "4. 数据每${syncInterval}分钟自动同步到服务器\n" +
-                                "5. 建议关闭电池优化以确保后台运行",
+                        text = "1. 启用「无障碍服务」权限\n" +
+                                "2. 在无障碍设置中找到 TimeTracker 并开启\n" +
+                                "3. 启用追踪开关\n" +
+                                "4. 应用将自动收集前台应用使用数据\n" +
+                                "5. 数据每${syncInterval}分钟自动同步到服务器\n" +
+                                "6. 建议关闭电池优化以确保后台运行",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
