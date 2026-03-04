@@ -28,6 +28,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // 使用 debug 签名（自动生成）
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
