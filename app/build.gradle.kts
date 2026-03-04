@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.timetracker"
-    compileSdk = 34
+    compileSdk = 33
 
     defaultConfig {
         applicationId = "com.timetracker"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0.0"
 
