@@ -35,17 +35,26 @@ object PermissionHelper {
      * 检查无障碍服务是否已启用
      */
     fun isAccessibilityServiceEnabled(context: Context): Boolean {
-        val expectedComponentName = "${context.packageName}/com.timetracker.service.TimeTrackerAccessibilityService"
+        val serviceName = "com.timetracker.service.TimeTrackerAccessibilityService"
+        val expectedComponentName1 = "${context.packageName}/$serviceName"
+        val expectedComponentName2 = "${context.packageName}/.service.TimeTrackerAccessibilityService"
+        
         val enabledServicesSetting = Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
         
-        android.util.Log.d("PermissionHelper", "Expected: $expectedComponentName")
+        android.util.Log.d("PermissionHelper", "Expected1: $expectedComponentName1")
+        android.util.Log.d("PermissionHelper", "Expected2: $expectedComponentName2")
         android.util.Log.d("PermissionHelper", "Enabled services: $enabledServicesSetting")
         
         if (enabledServicesSetting.isNullOrEmpty()) {
             return false
+        }
+        
+        // 直接检查是否包含服务名
+        if (enabledServicesSetting.contains(serviceName)) {
+            return true
         }
         
         val colonSplitter = TextUtils.SimpleStringSplitter(':')
@@ -54,7 +63,8 @@ object PermissionHelper {
         while (colonSplitter.hasNext()) {
             val componentName = colonSplitter.next()
             android.util.Log.d("PermissionHelper", "Checking: $componentName")
-            if (componentName.equals(expectedComponentName, ignoreCase = true)) {
+            if (componentName.equals(expectedComponentName1, ignoreCase = true) ||
+                componentName.equals(expectedComponentName2, ignoreCase = true)) {
                 return true
             }
         }
