@@ -1,0 +1,19 @@
+--- app/src/main/java/com/timetracker/data/local/AppUsageDatabase.kt
++++ app/src/main/java/com/timetracker/data/local/AppUsageDatabase.kt
+@@ -6,13 +6,14 @@ import androidx.room.Room
+ import androidx.room.RoomDatabase
+ 
+ @Database(
+-    entities = [AppUsageEntity::class],
+-    version = 1,
++    entities = [AppUsageEntity::class, HealthDataEntity::class],
++    version = 2,
+     exportSchema = false
+ )
+ abstract class AppUsageDatabase : RoomDatabase() {
+     
+     abstract fun appUsageDao(): AppUsageDao
++    abstract fun healthDataDao(): HealthDataDao
+     
+     companion object {
+         @Volatile

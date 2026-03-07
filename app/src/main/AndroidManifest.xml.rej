@@ -1,0 +1,14 @@
+--- app/src/main/AndroidManifest.xml
++++ app/src/main/AndroidManifest.xml
+@@ -10,6 +10,11 @@
+     <uses-permission
+         android:name="android.permission.PACKAGE_USAGE_STATS"
+         tools:ignore="ProtectedPermissions" />
++    
++    <!-- Health Connect 权限 -->
++    <uses-permission android:name="android.permission.health.READ_STEPS" />
++    <uses-permission android:name="android.permission.health.READ_SLEEP" />
++    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+ 
+     <application
+         android:allowBackup="true"

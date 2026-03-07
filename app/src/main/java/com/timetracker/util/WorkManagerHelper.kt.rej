@@ -1,0 +1,210 @@
+--- app/src/main/java/com/timetracker/util/WorkManagerHelper.kt
++++ app/src/main/java/com/timetracker/util/WorkManagerHelper.kt
+@@ -1,109 +1,161 @@
+ package com.timetracker.util
+ 
+ import android.content.Context
++import androidx.health.connect.client.HealthConnectClient
+ import androidx.work.*
+ import com.timetracker.worker.CollectorWorker
++import com.timetracker.worker.HealthDataSyncWorker
++import com.timetracker.worker.HealthDataUploadWorker
+ import com.timetracker.worker.SyncWorker
+ import java.util.concurrent.TimeUnit
+ 
+ object WorkManagerHelper {
+     
+     /**
+-     * 启动数据收集任务（每分钟）
++     * 启动所有后台任务
+      */
+-    fun startCollectorWork(context: Context) {
++    fun startAllWorkers(context: Context, syncIntervalMinutes: Long = 30) {
++        startCollectorWorker(context)
++        startSyncWorker(context, syncIntervalMinutes)
++        startHealthWorkers(context)
++    }
++    
++    /**
++     * 停止所有后台任务
++     */
++    fun stopAllWorkers(context: Context) {
++        val workManager = WorkManager.getInstance(context)
++        workManager.cancelUniqueWork(CollectorWorker.WORK_NAME)
++        workManager.cancelUniqueWork(SyncWorker.WORK_NAME)
++        workManager.cancelUniqueWork(HealthDataSyncWorker.WORK_NAME)
++        workManager.cancelUniqueWork(HealthDataUploadWorker.WORK_NAME)
++    }
++    
++    /**
++     * 启动数据采集 Worker（每分钟）
++     */
++    private fun startCollectorWorker(context: Context) {
+         val constraints = Constraints.Builder()
+             .setRequiresBatteryNotLow(false)
+             .build()
+         
+-        val collectorWork = PeriodicWorkRequestBuilder<CollectorWorker>(
+-            15, TimeUnit.MINUTES, // 最小间隔15分钟
+-            5, TimeUnit.MINUTES   // 弹性窗口5分钟
++        val collectorRequest = PeriodicWorkRequestBuilder<CollectorWorker>(
++            15, TimeUnit.MINUTES,
++            5, TimeUnit.MINUTES
+         )
+             .setConstraints(constraints)
+-            .setBackoffCriteria(
+-                BackoffPolicy.LINEAR,
+-                WorkRequest.MIN_BACKOFF_MILLIS,
+-                TimeUnit.MILLISECONDS
+-            )
+             .build()
+         
+         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+             CollectorWorker.WORK_NAME,
+             ExistingPeriodicWorkPolicy.KEEP,
+-            collectorWork
++            collectorRequest
+         )
+     }
+     
+     /**
+-     * 启动数据同步任务（每30分钟）
++     * 启动数据同步 Worker
+      */
+-    fun startSyncWork(context: Context, intervalMinutes: Long = 30) {
++    private fun startSyncWorker(context: Context, intervalMinutes: Long) {
+         val constraints = Constraints.Builder()
+             .setRequiredNetworkType(NetworkType.CONNECTED)
+-            .setRequiresBatteryNotLow(false)
+             .build()
+         
+-        val syncWork = PeriodicWorkRequestBuilder<SyncWorker>(
+-            intervalMinutes, TimeUnit.MINUTES,
+-            5, TimeUnit.MINUTES
++        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
++            intervalMinutes, TimeUnit.MINUTES
+         )
+             .setConstraints(constraints)
+-            .setBackoffCriteria(
+-                BackoffPolicy.EXPONENTIAL,
+-                WorkRequest.MIN_BACKOFF_MILLIS,
+-                TimeUnit.MILLISECONDS
+-            )
+             .build()
+         
+         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+             SyncWorker.WORK_NAME,
+             ExistingPeriodicWorkPolicy.REPLACE,
+-            syncWork
++            syncRequest
+         )
+     }
+     
+     /**
+-     * 立即执行一次同步
++     * 启动健康数据相关 Workers
+      */
+-    fun syncNow(context: Context) {
++    private fun startHealthWorkers(context: Context) {
++        // 检查 Health Connect 是否可用
++        val sdkStatus = HealthConnectClient.getSdkStatus(context)
++        if (sdkStatus != HealthConnectClient.SDK_AVAILABLE) {
++            return
++        }
++        
+         val constraints = Constraints.Builder()
+-            .setRequiredNetworkType(NetworkType.CONNECTED)
++            .setRequiresBatteryNotLow(false)
+             .build()
+         
+-        val syncWork = OneTimeWorkRequestBuilder<SyncWorker>()
++        // 健康数据同步 Worker（每小时从 Health Connect 读取）
++        val healthSyncRequest = PeriodicWorkRequestBuilder<HealthDataSyncWorker>(
++            1, TimeUnit.HOURS
++        )
+             .setConstraints(constraints)
+             .build()
+         
+-        WorkManager.getInstance(context).enqueue(syncWork)
++        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
++            HealthDataSyncWorker.WORK_NAME,
++            ExistingPeriodicWorkPolicy.KEEP,
++            healthSyncRequest
++        )
++        
++        // 健康数据上传 Worker（每 30 分钟上传到服务器）
++        val uploadConstraints = Constraints.Builder()
++            .setRequiredNetworkType(NetworkType.CONNECTED)
++            .build()
++        
++        val healthUploadRequest = PeriodicWorkRequestBuilder<HealthDataUploadWorker>(
++            30, TimeUnit.MINUTES
++        )
++            .setConstraints(uploadConstraints)
++            .build()
++        
++        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
++            HealthDataUploadWorker.WORK_NAME,
++            ExistingPeriodicWorkPolicy.KEEP,
++            healthUploadRequest
++        )
+     }
+     
+     /**
+-     * 停止所有任务
++     * 手动触发健康数据同步
+      */
+-    fun stopAllWork(context: Context) {
+-        WorkManager.getInstance(context).apply {
+-            cancelUniqueWork(CollectorWorker.WORK_NAME)
+-            cancelUniqueWork(SyncWorker.WORK_NAME)
+-        }
++    fun triggerHealthSync(context: Context) {
++        val request = OneTimeWorkRequestBuilder<HealthDataSyncWorker>()
++            .build()
++        
++        WorkManager.getInstance(context).enqueue(request)
+     }
+     
+     /**
+-     * 获取任务状态
++     * 手动触发健康数据上传
+      */
+-    fun getWorkStatus(context: Context): Pair<WorkInfo.State?, WorkInfo.State?> {
+-        val workManager = WorkManager.getInstance(context)
++    fun triggerHealthUpload(context: Context) {
++        val constraints = Constraints.Builder()
++            .setRequiredNetworkType(NetworkType.CONNECTED)
++            .build()
+         
+-        val collectorStatus = workManager
+-            .getWorkInfosForUniqueWork(CollectorWorker.WORK_NAME)
+-            .get()
+-            .firstOrNull()?.state
++        val request = OneTimeWorkRequestBuilder<HealthDataUploadWorker>()
++            .setConstraints(constraints)
++            .build()
++        
++        WorkManager.getInstance(context).enqueue(request)
++    }
++    
++    /**
++     * 手动触发应用使用数据同步
++     */
++    fun triggerSync(context: Context) {
++        val constraints = Constraints.Builder()
++            .setRequiredNetworkType(NetworkType.CONNECTED)
++            .build()
+         
+-        val syncStatus = workManager
+-            .getWorkInfosForUniqueWork(SyncWorker.WORK_NAME)
+-            .get()
+-            .firstOrNull()?.state
++        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
++            .setConstraints(constraints)
++            .build()
+         
+-        return Pair(collectorStatus, syncStatus)
++        WorkManager.getInstance(context).enqueue(syncRequest)
+     }
+ }
